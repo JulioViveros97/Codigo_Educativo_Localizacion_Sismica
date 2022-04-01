@@ -1,0 +1,87 @@
+GUIA RAPIDA USO CODIGO DESCARGA Y LOCALIZACION 
+TESIS VENTANA DE SUBDUCCION TALTAL-SERENA 2022
+
+Consultas,criticas, sugerencias al correo: juviveros@udec.cl 
+
+El manejo y uso correcto del codigo está desarrollado a fondo en el manual adjunto.
+Este documento solo tiene como objetivo mencionar brevemente los pasos para ejecutar con exito los distintos codigos unificados.
+
+
+
+* ANTES DE EMPEZAR
+> Recomiendo crear un entorno python para manejar los siguientes codigos(Explicado en el manual)
+> Recuerde modificar las direcciónes en todos los codigos a las propias.
+
+> El compilado incluye un codigo que enviará correos informando del estado del codigo. Si desea utilizarlo guarde su correo + contraseña en el codigo fuente y descargar en su entorno el paquete subprocess (correo_control.py). Queda como desafío además enviar correos cuando el codigo se detenga fruto de errores. Si no le interesa, comente el mismo allí donde lo encuentre aplicado.
+
+
+
+I) DESCARGA DE DATOS
+> Recuerde descargar FetchData desde la pagina oficial en su version actualizada y poner a punto el alias "fetchdata" en el .bashrc (ver manual).
+
+> 1_1_fetchdata_descarga.sh  --> Codigo control para la descarga de datos desde IRIS usando fetchdata
+> 1_AUX_corte_horario.py --> Codigo auxiliar para trozar un archivo de datos posterior a su descarga(Ej: Se tienen datos diarios, se desea reconvertirlos a horarios. Mientras mas grande el archivo de solicitud, suele demorar un poco menos la descarga).
+> 1_AUX_fetch_dayloop --> Codigo auxiliar que fabrica los periodos de descarga entre dos fechas solicitadas..
+> estaciones_taltal_serena.txt  --> Archivo con todos los parámetros necesarios para solicitar datos automaticamente de las estaciones/canales/etc. escritos.  
+
+
+
+II) CALIBRADO, PROCESADO Y GATILLADO INIDIVUAL
+
+> 2_AUX_espectrograma.py
+> 2_AUX_fcaracterisitca.py --> Codigos de calibrado para el filtraje y umbrales para gatillado automatico respectivamente. Se recomienda lanzar sobre fechas-carpeta con eventos conocidos de antemano.
+
+> 2_1_sismogramas.py --> Codigo de procesado y deteccion para cada archivo contenido con datos .mseed en el catalogo descargado. Entrega un sismograma y un archivo de picks en .../data_procesada
+
+
+
+III) LOCALIZACION CON BINDER
+> En este compilado se incluirá el codigo Binder en una carpeta, seguir el mismo proceso que en fetchdata para lograr trabajar con el alias "binder_nosc". Todos los parametros necesarios ubicados en binder_param.
+> 3_Binder_nosc_lanzador.py --> Codigo control del localizador. Se mueve abriendo todos los archivos de picks, tratando de invertir eventos al estar combinado con un gatillado grupal.En caso afirmativo, guarda un archivo .txt de eventos en las carpetas-periodo involucrados.
+
+
+
+IV) EXTRACCION DE FALSOS POSITIVOS
+> 4_1_buscaeventos.py --> Codigo que busca en .../data_procesada todos los archivos de eventos confirmados por Binder y anota los datos del evento en un archivo llamado ""EVENTOS.txt""
+
+> 4_2_sismogramas_MINI.py --> Codigo simil a 2_1_sismogramas.py, pero ajustado a ventanas alrededor de los eventos del codigo "buscaeventos". Además vuelve a pasar el gatillado detector y crea un nuevo archivo de picks especial para cada evento terminando en "MINI"(no usado, pero si se ajusta mejor el gatillo serviría para volver a aplicar Binder y relocalizar de forma muy basica. Mejor aún, se podría reconvertir según el metodo de Doble Diferencia(Sippl,2013)).
+
+> 4_3_filtro_falsospositivos.py --> Codigo de extraccion manual de los falsos positivos a partir de los simogramas tricomponente obtenidos con el codigo anterior. Envía las estaciones confirmadas al archivo ""EVENTOS_nofalsosp.txt""(En realidad crea una copia de EVENTOS("EVENTOS_copia.txt"), pero va borrando lineas a medida que avanzamos, cada línea confirmada como evento real, se almacena en el archivo final. Todo lo anterior con el objetivo de poder detener el codigo y retomar el trabajo a voluntad).
+
+
+V) MAPEADO:
+> Para añadir en cartopy un mapa 3D se utilizó un lector de imagenes .shp ; se incluirá una carpeta ejemplo para visualizar(plate_boundaries), pero deberías buscar en internet un mapa que se acomode a tu area de estudio.
+
+> 5_MAPA.py --> Mapa aereo en cartopy.
+
+> 5_MAPA_PROFUNDIDAD_2D.py --> Perfil de profundidad en 2D
+> 5_MAPA_PROFUNDIDAD_3D.py --> Perfil de profundidad en 3D
+
+ 
+
+
+
+*) OTROS
+
+> correo_control.py --> Codigo llamado en numerosas ocaciones dentro de otros scripts, envía un correo a la dirección ubicada en su interior.
+> AUX_borraeventos.py --> Codigo auxiliar para borrar archivos dentro de .../data_procesada, en caso de necesitar repetir el proceso o algúna etapa de este.
+> AUX_MANUAL_PICK_PS.py --> Codigo incompleto dedicado a capturar manualmente las primeras llegadas P y S en caso de necesitar una comparativa en el calibrado para la deteccion automatica. (Se incluyó al estar casi listo, solo necesita resolver el problema del almacenamiento correcto de los picks capturados).
+
+
+
+DATO CURIOSO: En caso de trabajar remotamente desde SSH, podemos rellenar inputs interactivos exigidos por un script sin tener que interactuar con este (y por tanto podremos cerrar la terminal sin comprometer el funcionamiento del codigo).
+Ej: aplicado de script fetchdata remotamente, ingresando los inputs requeridos:
+> var=val
+printf "no\n2019.01\n2019.365\n24\n$var\n"| nohup ./1_1_fetchdata_descarga.sh &> 1_fetchdata_descarga_logfile.log
+
+
+También nos servimos de la opción -f del ingreso en SSH, para retomar una terminal al salir en nuestro equipo.
+
+
+
+
+
+
+
+
+
